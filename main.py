@@ -1,11 +1,9 @@
 import os
 import pathlib
 import importlib
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastmcp import FastMCP
-
-# Initialize FastAPI & MCP Server
-app = FastAPI(title="MCP Tool Aggregation Service", version="0.2.0")
 
 # Create MCP server instance
 mcp = FastMCP(name="CBETA MCP Tools")
@@ -46,9 +44,27 @@ def recursive_import_tools(base_dir: str = "tools") -> None:
 # Import all tool modules
 recursive_import_tools()
 
+# Create MCP app with streamable-http transport
+# Streamable HTTP: Stateless, works better in multi-threaded environments like Streamlit
+mcp_app = mcp.http_app(path="/", transport="streamable-http")
+
+
+# Create combined lifespan that includes MCP's lifespan
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Combined lifespan for FastAPI app that includes MCP's lifespan."""
+    async with mcp_app.lifespan(app):
+        yield
+
+
+# Initialize FastAPI & MCP Server with combined lifespan
+app = FastAPI(
+    title="MCP Tool Aggregation Service",
+    version="0.2.0",
+    lifespan=lifespan
+)
+
 # Mount MCP server to FastAPI app at /mcp path
-# The http_app() returns an ASGI app that supports SSE transport
-mcp_app = mcp.http_app(path="/sse", transport="sse")
 app.mount("/mcp", mcp_app)
 
 # Start server

@@ -57,7 +57,8 @@ async def get_cbeta_toc(
     """
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get("https://api.cbetaonline.cn/toc", params={"work": work})
+            # API path: /works/toc (not /toc)
+            response = await client.get("https://api.cbetaonline.cn/works/toc", params={"work": work})
             response.raise_for_status()
             return success_response(response.json())
     except Exception as e:

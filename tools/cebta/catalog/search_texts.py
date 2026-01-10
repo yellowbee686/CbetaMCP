@@ -49,7 +49,8 @@ async def search_cbeta_texts(
     - work：經名層級（佛典標題）
     - toc：佛典內目次層級
     """
-    url = "https://api.cbetaonline.cn/toc"
+    # API path: /search/toc (not /toc)
+    url = "https://api.cbetaonline.cn/search/toc"
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.get(url, params={"q": q})

@@ -246,18 +246,24 @@ return error_response("Something went wrong")
 | `/search` | General fulltext search |
 | `/search/extended` | Extended search with operators |
 | `/search/synonym` | Synonym lookup |
-| `/search/facet` | Faceted search |
+| `/search/facet/{type}` | Faceted search (type: canon/category/dynasty/creator/work) |
 | `/search/all_in_one` | Combined search with KWIC |
 | `/search/notes` | Annotation search |
 | `/search/title` | Title search |
+| `/search/toc` | Scripture catalog search |
 | `/search/kwic` | KWIC for single volume |
 | `/search/similar` | Similarity search |
 | `/catalog_entry` | Catalog structure |
-| `/toc` | Table of contents |
-| `/works` | Scripture metadata |
-| `/juans` | Fascicle content |
+| `/works/toc` | Scripture table of contents (not /toc) |
+| `/works` | Scripture metadata and range search |
+| `/juans` | Fascicle HTML content |
 | `/juans/goto` | Position navigation |
 | `/lines` | Line-level content |
+
+**⚠️ API Path Notes:**
+- TOC: Use `/works/toc?work=T0001`, NOT `/toc?work=T0001`
+- Facet: Must specify type, e.g. `/search/facet/canon?q=法鼓`
+- Catalog search: Use `/search/toc?q=阿含`, NOT `/toc?q=阿含`
 
 ### 5.3 Common Parameters
 
@@ -281,13 +287,17 @@ In `config/mcp_config.json`:
 {
   "mcpServers": {
     "cbeta": {
-      "url": "http://localhost:8001/mcp/sse",
-      "transport": "sse",
+      "url": "http://localhost:8001/mcp/",
+      "type": "streamable_http",
       "description": "CBETA Buddhist Scripture Search MCP Server"
     }
   }
 }
 ```
+
+**⚠️ Important: Use `streamable_http` transport instead of `sse`**
+
+The SSE transport has issues in Streamlit's multi-threaded environment due to event loop conflicts. The `streamable_http` transport is stateless and works correctly across different threads.
 
 ### 6.2 Starting with Madrid App
 
@@ -320,6 +330,18 @@ LOCAL_AGENT_MCP_ENABLED=true uv run streamlit run app.py
 
 ### 7.3 Testing
 
+**Test Scripts (in `tests/` directory):**
+
+```bash
+# Test CBETA API connectivity and correctness
+python tests/test_cbeta_api.py --verbose
+
+# Test all MCP tools (direct API calls)
+python tests/test_mcp_tools.py --verbose
+```
+
+**Manual Testing:**
+
 ```bash
 # Test all imports
 python -c "from main import app, mcp; print(f'Tools: {len(mcp._tool_manager._tools)}')"
@@ -328,6 +350,10 @@ python -c "from main import app, mcp; print(f'Tools: {len(mcp._tool_manager._too
 uvicorn main:app --port 8001 &
 # Then test MCP SSE endpoint
 ```
+
+**Test Coverage:**
+- `test_cbeta_api.py`: Tests raw API endpoints (23 endpoints)
+- `test_mcp_tools.py`: Tests tool implementations (24 tools)
 
 ### 7.4 Code Style
 
@@ -348,6 +374,11 @@ uvicorn main:app --port 8001 &
 | Tool not registered | Ensure decorator is `@__mcp_server__.tool` (no parentheses) |
 | API timeout | Increase `timeout` in `httpx.AsyncClient()` |
 | Connection refused | Check CBETA API status, network connectivity |
+| 404 Not Found | Check API endpoint path (see 5.2 for correct paths) |
+| 500 Server Error | CBETA API server issue, retry later |
+| MCP tool timeout (60s) with SSE | **Use `streamable_http` transport instead of `sse`** (see 6.1) |
+| SSE works in test but not in Streamlit | Event loop conflict; switch to `streamable_http` transport |
+| Search returns 0 results | Check search term (e.g., "安世高" → use "安清" for creator field) |
 
 ### 8.2 Debug Mode
 
@@ -362,6 +393,7 @@ DEBUG=1 python main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.2.1 | 2026-01-10 | Fixed API paths: `/works/toc`, `/search/facet/{type}`, `/search/toc`. Added test suite. |
 | 0.2.0 | 2026-01 | Migrated from fastapi-mcp to fastmcp, refactored all tools |
 | 0.1.0 | Initial | Original implementation with fastapi-mcp |
 
