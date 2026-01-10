@@ -48,7 +48,7 @@ recursive_import_tools()
 
 # Mount MCP server to FastAPI app at /mcp path
 # The http_app() returns an ASGI app that supports SSE transport
-mcp_app = mcp.http_app(path="/sse")
+mcp_app = mcp.http_app(path="/sse", transport="sse")
 app.mount("/mcp", mcp_app)
 
 # Start server

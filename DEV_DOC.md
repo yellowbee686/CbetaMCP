@@ -74,7 +74,18 @@ Server endpoints:
 
 Each tool is a Python file in `tools/cebta/<category>/` directory. Tools are auto-discovered and registered at startup.
 
-### 3.2 Tool Template
+### 3.2 File Naming Convention
+
+**推荐按函数名命名文件**，而不是用序号：
+
+| ❌ 不推荐 | ✅ 推荐 | 原因 |
+|----------|--------|------|
+| `tools_1.py` | `get_work_info.py` | 一目了然知道功能 |
+| `tools_2.py` | `get_toc.py` | 更容易查找和维护 |
+
+### 3.3 Tool Template (Recommended)
+
+**关键：docstring 中包含示例是让 LLM 正确调用工具的最重要因素！**
 
 ```python
 import httpx
@@ -84,34 +95,91 @@ from main import __mcp_server__, success_response, error_response
 
 
 @__mcp_server__.tool
-async def my_tool_name(
-    required_param: Annotated[str, Field(description="Parameter description")],
-    optional_param: Annotated[int, Field(description="Optional with default")] = 10,
+async def get_cbeta_work_info(
+    work: Annotated[str, Field(description="佛典編號，如 'T1501'、'T0001'")],
 ) -> dict:
     """
-    Tool docstring - becomes the tool description for LLM.
+    📘 CBETA 佛典資訊查詢工具
     
-    Describe what this tool does, what it returns, and usage notes.
+    根據佛典編號（work ID）取得該佛典的詳細資訊。
+    
+    📥 請求範例：
+    - work: "T1501" → 菩薩戒本
+    - work: "T0001" → 長阿含經
+    
+    📤 回應範例：
+    {
+        "work": "T1501",
+        "title": "菩薩戒本",
+        "byline": "彌勒菩薩說 唐 玄奘譯",
+        "category": "律部類",
+        "time_dynasty": "唐"
+    }
+    
+    🏷️ 返回字段：
+    - work: 佛典編號
+    - title: 佛典題名
+    - byline: 作譯者說明
+    - category: 分類
     """
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.get("https://api.cbetaonline.cn/endpoint", params={...})
+            resp = await client.get("https://api.cbetaonline.cn/works", params={"work": work})
             resp.raise_for_status()
             return success_response(resp.json())
     except Exception as e:
-        return error_response(f"Error message: {str(e)}")
+        return error_response(f"錯誤：{str(e)}")
 ```
 
-### 3.3 Key Patterns
+### 3.4 MCP 协议中 LLM 如何理解工具
+
+LLM 通过以下信息决定如何调用工具：
+
+```
+┌─────────────────────────────────────────────────────┐
+│  MCP Tool Definition (发送给 LLM)                    │
+├─────────────────────────────────────────────────────┤
+│  name: "get_cbeta_work_info"          ← 函数名       │
+│  description: "📘 CBETA 佛典..."      ← docstring   │
+│  inputSchema: {                        ← 参数 schema │
+│    "properties": {                                  │
+│      "work": {                                      │
+│        "type": "string",                            │
+│        "description": "佛典編號，如 'T1501'"        │
+│      }                                              │
+│    }                                                │
+│  }                                                  │
+└─────────────────────────────────────────────────────┘
+```
+
+**docstring 的最佳实践**：
+
+| 元素 | 重要性 | 说明 |
+|------|--------|------|
+| 📥 请求范例 | ⭐⭐⭐ | **最重要！** 让 LLM 知道参数格式 |
+| 📤 响应范例 | ⭐⭐⭐ | 让 LLM 知道如何处理返回值 |
+| 🏷️ 字段说明 | ⭐⭐ | 帮助理解领域术语 |
+| 功能描述 | ⭐⭐ | 简洁说明工具用途 |
+| emoji 分隔 | ⭐ | 增加可读性 |
+
+**为什么示例很重要？**
+
+对于 CBETA 这种领域特定的 API：
+- LLM 不一定知道 `T1501` 是什么格式
+- 看到示例后立即理解应该传什么参数
+- 看到返回示例后知道如何展示结果给用户
+
+### 3.6 Key Patterns
 
 1. **Decorator**: Use `@__mcp_server__.tool` (no parentheses)
-2. **Parameters**: Use `Annotated[Type, Field(description="...")]` for LLM visibility
-3. **Async**: All tools should be async functions
-4. **Timeout**: Always set `httpx.AsyncClient(timeout=...)` to avoid hanging
-5. **Response**: Use `success_response(dict)` or `error_response(str)`
-6. **Type Hints**: Required for all parameters and return type
+2. **Parameters**: Use `Annotated[Type, Field(description="含示例的描述")]` for LLM visibility
+3. **Docstring**: 必须包含请求/响应示例，这是 LLM 理解工具的关键
+4. **Async**: All tools should be async functions
+5. **Timeout**: Always set `httpx.AsyncClient(timeout=...)` to avoid hanging
+6. **Response**: Use `success_response(dict)` or `error_response(str)`
+7. **File Naming**: Use function name as filename (e.g., `get_work_info.py`)
 
-### 3.4 Response Helpers
+### 3.7 Response Helpers
 
 ```python
 from main import success_response, error_response
