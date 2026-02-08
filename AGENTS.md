@@ -21,7 +21,7 @@ CbetaMCP/
 │       ├── search/         # Fulltext search tools (10 tools)
 │       ├── catalog/        # Catalog/directory tools (5 tools)
 │       └── work/           # Scripture content tools (5 tools)
-├── DEV_DOC.md             # This documentation
+├── AGENTS.md              # This documentation
 └── readme.md              # User-facing README
 ```
 
@@ -306,7 +306,7 @@ The SSE transport has issues in Streamlit's multi-threaded environment due to ev
 ./scripts/start_mcp_server.sh --bg
 
 # Terminal 2: Start Madrid App
-LOCAL_AGENT_MCP_ENABLED=true uv run streamlit run app.py
+LOCAL_AGENT_MCP_ENABLED=true .venv/bin/streamlit run app.py
 ```
 
 ---
