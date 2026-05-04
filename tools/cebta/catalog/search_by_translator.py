@@ -49,14 +49,18 @@ async def search_works_by_translator(
         ]
     }
     """
-    url = "https://api.cbetaonline.cn/works"
+    url = "https://cbdata.dila.edu.tw/stable/works"
     query_params = {}
 
     if creator_id:
         query_params["creator_id"] = creator_id
     elif creator:
+        if creator == "安世高":
+            creator = "安清"
         query_params["creator"] = creator
     elif creator_name:
+        if creator_name == "安世高":
+            creator_name = "安清"
         query_params["creator_name"] = creator_name
     else:
         return error_response("請至少提供一個搜尋參數：creator_id、creator 或 creator_name")
