@@ -1,6 +1,5 @@
 import httpx
 from typing import Annotated
-from urllib.parse import quote
 from pydantic import Field
 from main import __mcp_server__, success_response, error_response
 
@@ -40,11 +39,10 @@ async def extended_search(
     }
     """
     try:
-        encoded_query = quote(q)
         async with httpx.AsyncClient(timeout=20.0) as client:
             resp = await client.get(
                 "https://api.cbetaonline.cn/search/extended",
-                params={"q": encoded_query, "start": start, "rows": rows},
+                params={"q": q, "start": start, "rows": rows},
             )
             resp.raise_for_status()
             data = resp.json()

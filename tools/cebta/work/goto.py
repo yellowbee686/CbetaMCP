@@ -59,9 +59,16 @@ async def cbeta_goto(
             query_params["line"] = line
 
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
             response = await client.get(base_url, params=query_params)
             response.raise_for_status()
-            return success_response({"url": str(response.url)})
+            if "location" in response.headers:
+                return success_response({"url": response.headers["location"]})
+
+            data = response.json()
+            if isinstance(data, dict) and "url" in data:
+                return success_response({"url": data["url"]})
+
+            return success_response(data)
     except Exception as e:
         return error_response(f"CBETA 跳轉失敗：{str(e)}")
