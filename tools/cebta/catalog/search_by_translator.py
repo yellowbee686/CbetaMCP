@@ -49,18 +49,14 @@ async def search_works_by_translator(
         ]
     }
     """
-    url = "https://cbdata.dila.edu.tw/stable/works"
+    url = "https://api.cbetaonline.cn/works"
     query_params = {}
 
     if creator_id:
         query_params["creator_id"] = creator_id
     elif creator:
-        if creator == "安世高":
-            creator = "安清"
         query_params["creator"] = creator
     elif creator_name:
-        if creator_name == "安世高":
-            creator_name = "安清"
         query_params["creator_name"] = creator_name
     else:
         return error_response("請至少提供一個搜尋參數：creator_id、creator 或 creator_name")
@@ -69,6 +65,14 @@ async def search_works_by_translator(
         async with httpx.AsyncClient(timeout=20.0) as client:
             resp = await client.get(url, params=query_params)
             resp.raise_for_status()
-            return success_response(resp.json())
+            data = resp.json()
+            if isinstance(data, dict) and "error" in data:
+                error = data["error"]
+                if isinstance(error, dict):
+                    message = error.get("message", "CBETA API returned an error")
+                else:
+                    message = str(error)
+                return error_response(f"CBETA API error: {message}")
+            return success_response(data)
     except Exception as e:
         return error_response(f"查詢失敗: {str(e)}")

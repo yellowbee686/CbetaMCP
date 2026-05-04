@@ -52,19 +52,19 @@ pip install -r requirements.txt
 python main.py
 
 # Or with uvicorn directly
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 18765
 ```
 
 Server endpoints:
-- **FastAPI**: `http://localhost:8000`
-- **MCP SSE**: `http://localhost:8000/mcp/sse`
+- **FastAPI**: `http://localhost:18765`
+- **MCP HTTP**: `http://localhost:18765/mcp/`
 
 ### 2.3 Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_PORT` | `8000` | Server port |
-| `APP_BASE_URL` | `http://localhost:8000` | Base URL for API |
+| `APP_PORT` | `18765` | Server port |
+| `APP_BASE_URL` | `http://localhost:18765` | Base URL for API |
 
 ---
 
@@ -378,7 +378,7 @@ uvicorn main:app --port 8001 &
 | 500 Server Error | CBETA API server issue, retry later |
 | MCP tool timeout (60s) with SSE | **Use `streamable_http` transport instead of `sse`** (see 6.1) |
 | SSE works in test but not in Streamlit | Event loop conflict; switch to `streamable_http` transport |
-| Search returns 0 results | Check search term (e.g., "安世高" → use "安清" for creator field) |
+| Search returns 0 results | Verify the API's canonical creator name or use `creator_id` when available |
 
 ### 8.2 Debug Mode
 

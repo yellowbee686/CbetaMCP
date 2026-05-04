@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 显式暴露端口（方便 Dockerfile 文档化）
-EXPOSE 8000
+EXPOSE 18765
 
 # 使用 uvicorn 启动，并加载环境变量（自动识别 .env）
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000","--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "18765", "--reload"]

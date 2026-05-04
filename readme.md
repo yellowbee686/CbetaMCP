@@ -54,7 +54,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-默认服务地址：http://localhost:8000/mcp
+默认服务地址：http://localhost:18765/mcp
 
 ### 🐳 使用 Docker 部署 / Docker Deployment
 
@@ -63,7 +63,7 @@ python main.py
 docker-compose up --build -d
 
 # 访问 MCP 工具服务
-http://localhost:8000/mcp
+http://localhost:18765/mcp
 ```
 
 ---
